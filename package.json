@@ -7,19 +7,22 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.12.2",
+    "clsx": "^2.1.1",
     "lucide-react": "^0.545.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.9.4",
-    "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start-backend": "cd ../secure-vault-backend && ./mvnw spring-boot:run",
+    "start-frontend": "vite",
+    "dev": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
   },
   "eslintConfig": {
     "extends": [
@@ -40,8 +43,12 @@
     ]
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.14"
+    "tailwindcss": "^4.1.14",
+    "vite": "^7.1.10",
+    "concurrently": "^9.0.1"
   }
 }
