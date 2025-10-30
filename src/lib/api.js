@@ -90,4 +90,16 @@ export const updateCertificateByUniqueId = async (uniqueId, payload) => {
   return data;
 };
 
+// ===== User Profile =====
+export const fetchMyProfile = async () => {
+  // backend should use token to resolve current user
+  const { data } = await API.get(`/user/profile`);
+  return data;
+};
+
+export const updateMyProfile = async (payload) => {
+  const { data } = await API.put(`/user/updateProfile`, payload);
+  return data;
+};
+
 export default API;

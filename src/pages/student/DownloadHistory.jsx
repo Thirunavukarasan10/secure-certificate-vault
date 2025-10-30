@@ -9,7 +9,17 @@ const nav = [
 ];
 
 export default function DownloadHistory() {
-  const rows = [];
+  const [rows, setRows] = React.useState([]);
+
+  React.useEffect(() => {
+    try {
+      const key = 'sav_downloads';
+      const data = JSON.parse(localStorage.getItem(key) || '[]');
+      setRows(Array.isArray(data) ? data : []);
+    } catch {
+      setRows([]);
+    }
+  }, []);
 
   return (
     <div className="flex min-h-screen">
@@ -26,8 +36,18 @@ export default function DownloadHistory() {
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 && (
+              {rows.length === 0 ? (
                 <tr><td className="px-3 py-2" colSpan={3}>No downloads yet.</td></tr>
+              ) : (
+                rows.map((r, idx) => (
+                  <tr key={idx} className="odd:bg-black/5">
+                    <td className="px-3 py-2 font-mono text-sm">{r.uniqueId}</td>
+                    <td className="px-3 py-2 text-sm">{new Date(r.date).toLocaleString()}</td>
+                    <td className="px-3 py-2 text-sm">
+                      <a className="text-blue-600 underline" href={r.url} target="_blank" rel="noreferrer">Open</a>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

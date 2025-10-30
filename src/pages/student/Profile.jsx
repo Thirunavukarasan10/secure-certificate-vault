@@ -11,7 +11,7 @@ const nav = [
 
 export default function Profile() {
   const { user } = useAuth();
-  const profile = { name: user?.name || user?.identifier, rollNo: user?.identifier, email: '—', role: 'Student' };
+  const profile = { name: user?.name || user?.identifier, rollNo: user?.identifier, email: user?.identifier, role: 'Student' };
   return (
     <div className="flex min-h-screen">
       <Sidebar items={nav} />

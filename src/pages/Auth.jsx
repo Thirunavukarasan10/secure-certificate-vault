@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar.jsx';
 import Button from '../components/Button.jsx';
 import Input from '../components/Input.jsx';
@@ -59,7 +59,6 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-white text-black">
       <Navbar />
-      <Toaster position="top-right" />
       <main className="mx-auto max-w-xl px-4 py-10 animate-slide-up">
         <div className="mb-6 flex items-center gap-2 text-sm">
           <button

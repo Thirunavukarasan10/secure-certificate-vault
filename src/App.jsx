@@ -24,8 +24,10 @@ import AdminProfile from './pages/admin/Profile.jsx';
 import Verify from './pages/employer/VerifyCertificate.jsx';
 import VerifyHistory from './pages/employer/VerificationHistory.jsx';
 import EmployerProfile from './pages/employer/Profile.jsx';
+import SimpleLogin from './pages/SimpleLogin.jsx';
 
 import { useAuth } from './context/AuthContext.jsx';
+import PublicVerify from './pages/PublicVerify.jsx';
 
 function RoleRedirect() {
   const { role } = useAuth();
@@ -40,6 +42,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/login-simple" element={<SimpleLogin />} />
+        <Route path="/verify/:uniqueId" element={<PublicVerify />} />
         <Route element={<ProtectedRoute />}> 
           <Route path="/dashboard" element={<RoleRedirect />} />
         </Route>

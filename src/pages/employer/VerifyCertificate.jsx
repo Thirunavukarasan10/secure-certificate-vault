@@ -4,7 +4,7 @@ import Input from '../../components/Input.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
 import QRPlaceholder from '../../components/QRPlaceholder.jsx';
-import { verifyCertificateById } from '../../lib/api.js';
+import { verifyCertificateById, BASE_URL } from '../../lib/api.js';
 
 const nav = [
   { to: '/employer/verify', label: 'Verify Certificate' },
@@ -15,19 +15,34 @@ const nav = [
 export default function VerifyCertificate() {
   const [id, setId] = React.useState('');
   const [result, setResult] = React.useState(null);
+  const [cert, setCert] = React.useState(null);
+  const [qrSrc, setQrSrc] = React.useState(null);
 
   const onVerify = async (e) => {
     e.preventDefault();
     try {
       const data = await verifyCertificateById(id);
       if (data?.valid) {
-        const cert = data.certificate;
-        setResult({ status: 'Valid', holder: cert.studentRollNo, course: cert.certificateName, year: cert.issuedDate });
+        const c = data.certificate;
+        setCert(c);
+        setResult({ status: 'Valid', holder: c.studentRollNo, course: c.certificateName, year: c.issuedDate });
+        const path = c?.qrCodeUrl || c?.qrCodePath || '';
+        if (path) {
+          const base = BASE_URL.replace('/api','');
+          const full = path.startsWith('http') ? path : `${base}${path}`;
+          setQrSrc(full);
+        } else {
+          setQrSrc(null);
+        }
       } else {
+        setCert(null);
         setResult({ status: 'Invalid' });
+        setQrSrc(null);
       }
     } catch {
+      setCert(null);
       setResult({ status: 'Invalid' });
+      setQrSrc(null);
     }
   };
 
@@ -38,7 +53,20 @@ export default function VerifyCertificate() {
         <h2 className="mb-4 text-xl font-bold">Verify Certificate</h2>
         <div className="grid gap-4 md:grid-cols-3">
           <Card title="Scan QR">
-            <QRPlaceholder size={160} />
+            {result?.status === 'Valid' ? (
+              qrSrc ? (
+                <img
+                  alt="Certificate QR"
+                  className="h-40 w-40 rounded border object-contain bg-white"
+                  src={qrSrc}
+                  onError={() => setQrSrc(null)}
+                />
+              ) : (
+                <QRPlaceholder size={160} value={`${window.location.origin}/verify/${encodeURIComponent(id)}`} />
+              )
+            ) : (
+              <QRPlaceholder size={160} />
+            )}
           </Card>
           <Card className="md:col-span-2" title="Enter Unique ID">
             <form onSubmit={onVerify} className="flex flex-col gap-3 md:flex-row">

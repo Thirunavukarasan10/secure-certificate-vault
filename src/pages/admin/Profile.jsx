@@ -1,7 +1,9 @@
-import React from 'react';
 import Sidebar from '../../components/Sidebar.jsx';
 import Card from '../../components/Card.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import React from 'react';
+import { getMyProfile } from '../../services/userService.js';
+import toast from 'react-hot-toast';
 
 const nav = [
   { to: '/admin/upload', label: 'Upload Certificate' },
@@ -12,7 +14,26 @@ const nav = [
 
 export default function Profile() {
   const { user } = useAuth();
-  const profile = { name: user?.identifier?.split('@')?.[0] || 'Admin', department: '—', email: user?.identifier, role: 'Admin (HOD)' };
+  const [profile, setProfile] = React.useState({ name: user?.identifier?.split('@')?.[0] || 'Admin', department: '—', email: user?.identifier, role: 'Admin (HOD)' });
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getMyProfile();
+        if (!mounted) return;
+        setProfile({
+          name: data?.fullName || data?.name || profile.name,
+          department: data?.department || '—',
+          email: data?.email || profile.email,
+          role: data?.role === 'HOD' ? 'Admin (HOD)' : (data?.role || profile.role),
+        });
+      } catch (e) {
+        toast.error('Failed to load profile');
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
   return (
     <div className="flex min-h-screen">
       <Sidebar items={nav} />
