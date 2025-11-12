@@ -22,9 +22,9 @@ export default function DownloadHistory() {
   }, []);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar items={nav} />
-      <main className="flex-1 p-6">
+      <main className="flex-1 overflow-y-auto p-6">
         <h2 className="mb-4 text-xl font-bold">Download History</h2>
         <div className="overflow-hidden rounded-lg border border-black/10">
           <table className="w-full text-sm">

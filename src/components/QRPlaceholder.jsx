@@ -1,12 +1,11 @@
 import React from 'react';
-import QRCode from 'react-qr-code';
+import { QRCodeCanvas } from 'qrcode.react';
 
 export default function QRPlaceholder({ size = 96, value }) {
   if (value) {
     return (
       <div style={{ background: 'white', padding: 4 }}>
-        <QRCode value={value} size={size} style={{ height: size, width: size }}
-        />
+        <QRCodeCanvas value={value} size={size} style={{ height: size, width: size }} />
       </div>
     );
   }

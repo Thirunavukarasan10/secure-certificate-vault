@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar.jsx';
 import Card from '../../components/Card.jsx';
 import Button from '../../components/Button.jsx';
 import toast from 'react-hot-toast';
-import QRPlaceholder from '../../components/QRPlaceholder.jsx';
-import { fetchAllCertificates, BASE_URL } from '../../lib/api.js';
+import { QRCodeCanvas } from 'qrcode.react';
+import { getCertificatesByStudentId } from '../../utils/demoStorage.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const nav = [
@@ -15,99 +16,166 @@ const nav = [
 
 export default function MyCertificates() {
   const { user } = useAuth();
-  const [certificates, setCertificates] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [message, setMessage] = React.useState('');
+  const [certificates, setCertificates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
 
-  React.useEffect(() => {
-    let mounted = true;
-    async function load() {
-      try {
-        const data = await fetchAllCertificates();
-        if (!mounted) return;
-        if (Array.isArray(data)) setCertificates(data);
-        else if (data?.message) setMessage(data.message);
-      } catch (e) {
-        setMessage('Failed to load certificates');
-      } finally {
-        if (mounted) setLoading(false);
+  useEffect(() => {
+    loadCertificates();
+    
+    // Refresh every 2 seconds to catch new uploads
+    const interval = setInterval(loadCertificates, 2000);
+    return () => clearInterval(interval);
+  }, [user?.identifier]);
+
+  const loadCertificates = () => {
+    try {
+      setLoading(true);
+      if (!user?.identifier) {
+        setMessage('Not logged in');
+        setCertificates([]);
+        setLoading(false);
+        return;
       }
+
+      const studentCerts = getCertificatesByStudentId(user.identifier);
+      
+      if (Array.isArray(studentCerts)) {
+        setCertificates(studentCerts);
+        if (studentCerts.length === 0) {
+          setMessage('No certificates found. Certificates will appear here once they are issued.');
+        } else {
+          setMessage('');
+        }
+      } else {
+        setCertificates([]);
+        setMessage('No certificates found');
+      }
+    } catch (e) {
+      console.error('Error loading certificates:', e);
+      setMessage('Failed to load certificates');
+      setCertificates([]);
+    } finally {
+      setLoading(false);
     }
-    load();
-    return () => { mounted = false; };
-  }, []);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const handleDownloadClick = (cert) => {
+    // Mock download - in real app, this would download the actual file
+    toast.success(`Downloading ${cert.certificateTitle}...`);
+    // Simulate download
+    setTimeout(() => {
+      toast.success('Download complete!');
+    }, 1000);
+  };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar items={nav} />
-      <main className="flex-1 p-6">
-        <h2 className="mb-4 text-xl font-bold">My Certificates</h2>
-        {loading ? (
-          <div>Loading...</div>
-        ) : (
-          <>
-            {message && <div className="text-sm text-black/70">{message}</div>}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {certificates.map((c) => {
-                const downloadUrl = `${BASE_URL.replace('/api','')}${c.certificateUrl}`;
-                const qrUrl = `${window.location.origin}/verify/${encodeURIComponent(c.uniqueId)}`;
-                const onDownload = () => {
-                  try {
-                    const key = 'sav_downloads';
-                    const prev = JSON.parse(localStorage.getItem(key) || '[]');
-                    const entry = { uniqueId: c.uniqueId, date: new Date().toISOString(), url: downloadUrl };
-                    localStorage.setItem(key, JSON.stringify([entry, ...prev].slice(0, 100)));
-                  } catch {}
-                };
-                const handleDownloadClick = async (e) => {
-                  e.preventDefault();
-                  onDownload();
-                  try {
-                    const encodedUrl = encodeURI(downloadUrl);
-                    const res = await fetch(encodedUrl, { credentials: 'include', mode: 'cors', cache: 'no-store' });
-                    if (!res.ok) throw new Error('Download failed');
-                    const contentType = res.headers.get('content-type') || '';
-                    const blob = await res.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    const rawName = (encodedUrl.split('/')?.pop() || `${c.uniqueId}`).split('?')[0];
-                    const extFromType = contentType.includes('png') ? '.png' : contentType.includes('jpeg') ? '.jpg' : contentType.includes('pdf') ? '.pdf' : '';
-                    const hasExt = /\.[a-zA-Z0-9]{2,5}$/.test(decodeURIComponent(rawName));
-                    const fileName = hasExt ? decodeURIComponent(rawName) : `${c.uniqueId}${extFromType || '.png'}`;
-                    a.href = url;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    URL.revokeObjectURL(url);
-                    toast.success('Download started');
-                  } catch (err) {
-                    console.error('Download error', err);
-                    toast.error('Direct download failed. Opening in new tab...');
-                    try { window.open(encodeURI(downloadUrl), '_blank', 'noopener'); } catch {}
-                  }
-                };
-                return (
-                  <Card
-                    key={c.uniqueId}
-                    title={c.certificateName}
-                    actions={
-                      <Button variant="outline" onClick={handleDownloadClick}>Download</Button>
-                    }
-                  >
-                    <div className="flex items-center gap-4">
-                      <QRPlaceholder value={qrUrl} />
-                      <div>
-                        <div className="text-xs uppercase tracking-wide text-black/60">Unique ID</div>
-                        <div className="font-mono text-sm">{c.uniqueId}</div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="mx-auto max-w-7xl">
+          <h2 className="mb-6 text-2xl font-bold text-gray-900">Dashboard</h2>
+          
+          {/* Certificates Section */}
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-xl font-semibold text-gray-900">My Certificates</h3>
+            {certificates.length > 0 && (
+              <span className="text-sm text-gray-500">
+                {certificates.length} certificate{certificates.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          {loading && certificates.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">Loading...</div>
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              {message && certificates.length === 0 && (
+                <Card className="mb-4">
+                  <div className="text-sm text-gray-600">{message}</div>
+                </Card>
+              )}
+              
+              {certificates.length === 0 ? (
+                <Card className="py-12 text-center">
+                  <div className="text-gray-500">
+                    No certificates found. Certificates will appear here once they are issued.
+                  </div>
+                </Card>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {certificates.map((cert) => {
+                    const uniqueId = cert.uniqueId || cert.id;
+                    const qrUrl =
+                      cert.qrUrl ||
+                      cert.verificationUrl ||
+                      `https://securevault.verifier/verify?certId=${uniqueId}`;
+                    
+                    return (
+                      <Card
+                        key={uniqueId}
+                        className="transition-all duration-300 hover:shadow-lg"
+                        title={cert.certificateTitle}
+                        actions={
+                          <Button variant="outline" onClick={() => handleDownloadClick(cert)}>
+                            Download
+                          </Button>
+                        }
+                      >
+                        <div className="space-y-4">
+                          {/* Certificate Details */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Unique ID</span>
+                              <span className="rounded bg-blue-50 px-2 py-1 text-xs font-mono text-blue-700">{uniqueId}</span>
+                            </div>
+                            {(cert.uploadDate || cert.timestamp || cert.issuedDate) && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Issued Date</span>
+                                <span className="text-xs text-gray-700">
+                                  {formatDate(cert.uploadDate || cert.timestamp || cert.issuedDate)}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Department</span>
+                              <span className="text-xs text-gray-700">{cert.department}</span>
+                            </div>
+                          </div>
+
+                          {/* QR Code Section */}
+                          <div className="border-t pt-4">
+                            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 text-center">QR Code</div>
+                            <div className="flex items-center justify-center mb-4">
+                              <div className="rounded border-2 border-blue-300 bg-white p-3">
+                                <QRCodeCanvas value={qrUrl} size={120} />
+                              </div>
+                            </div>
+                            <p className="text-xs text-center text-gray-500">
+                              Scan to verify certificate
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </main>
     </div>
   );

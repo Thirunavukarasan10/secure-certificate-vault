@@ -3,8 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
 import Home from './pages/Home.jsx';
-import Auth from './pages/Auth.jsx';
 import Error404 from './pages/Error404.jsx';
+import Auth from './pages/Auth.jsx';
 
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { ROLES, ROUTE_DEFAULTS } from './utils/constants.js';
@@ -29,9 +29,16 @@ import SimpleLogin from './pages/SimpleLogin.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import PublicVerify from './pages/PublicVerify.jsx';
 
+// Demo pages
+import DemoLayout from './components/DemoLayout.jsx';
+import DemoHome from './pages/demo/DemoHome.jsx';
+import AdminDashboard from './pages/demo/AdminDashboard.jsx';
+import StudentDashboard from './pages/demo/StudentDashboard.jsx';
+import AnalyticsDashboard from './pages/demo/AnalyticsDashboard.jsx';
+
 function RoleRedirect() {
   const { role } = useAuth();
-  if (!role) return <Navigate to="/auth" replace />;
+  if (!role) return <Navigate to="/admin-login" replace />;
   return <Navigate to={ROUTE_DEFAULTS[role]} replace />;
 }
 
@@ -42,8 +49,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/login-simple" element={<SimpleLogin />} />
+        <Route path="/admin-login" element={<SimpleLogin />} />
         <Route path="/verify/:uniqueId" element={<PublicVerify />} />
+        <Route path="/verify" element={<PublicVerify />} />
         <Route element={<ProtectedRoute />}> 
           <Route path="/dashboard" element={<RoleRedirect />} />
         </Route>
@@ -69,6 +77,40 @@ export default function App() {
           <Route path="/employer/history" element={<VerifyHistory />} />
           <Route path="/employer/profile" element={<EmployerProfile />} />
         </Route>
+
+        {/* Demo Routes - Frontend Only */}
+        <Route
+          path="/demo"
+          element={
+            <DemoLayout>
+              <DemoHome />
+            </DemoLayout>
+          }
+        />
+        <Route
+          path="/demo/admin"
+          element={
+            <DemoLayout>
+              <AdminDashboard />
+            </DemoLayout>
+          }
+        />
+        <Route
+          path="/demo/student"
+          element={
+            <DemoLayout>
+              <StudentDashboard />
+            </DemoLayout>
+          }
+        />
+        <Route
+          path="/demo/analytics"
+          element={
+            <DemoLayout>
+              <AnalyticsDashboard />
+            </DemoLayout>
+          }
+        />
 
         <Route path="*" element={<Error404 />} />
       </Routes>

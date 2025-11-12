@@ -34,6 +34,17 @@ export const loginUser = async (data) => {
   }
 };
 
+// ✅ Admin login only
+export const adminLogin = async (data) => {
+  try {
+    const response = await API.post("/admin/login", data);
+    return response;
+  } catch (error) {
+    console.error("Admin login error:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // Attach token automatically for protected routes
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -46,15 +57,15 @@ API.interceptors.response.use(
   (error) => {
     if (error?.response?.status === 401) {
       try { localStorage.removeItem("token"); localStorage.removeItem("sav_user"); } catch {}
-      if (typeof window !== 'undefined') window.location.replace('/auth');
+      if (typeof window !== 'undefined') window.location.replace('/admin-login');
     }
     return Promise.reject(error);
   }
 );
 
 // ===== Certificates & Admin =====
-export const fetchStudentCertificates = async (rollNo) => {
-  const { data } = await API.get(`/certificates/student/${encodeURIComponent(rollNo)}`);
+export const fetchStudentCertificates = async (studentId) => {
+  const { data } = await API.get(`/student/${encodeURIComponent(studentId)}/certificates`);
   return data;
 };
 
@@ -65,6 +76,11 @@ export const verifyCertificateById = async (uniqueId) => {
 
 export const fetchMyVerificationHistory = async () => {
   const { data } = await API.get(`/verify/history`);
+  return data;
+};
+
+export const fetchAllVerifications = async () => {
+  const { data } = await API.get(`/admin/analytics/verifications`);
   return data;
 };
 
@@ -92,13 +108,19 @@ export const updateCertificateByUniqueId = async (uniqueId, payload) => {
 
 // ===== User Profile =====
 export const fetchMyProfile = async () => {
-  // backend should use token to resolve current user
-  const { data } = await API.get(`/user/profile`);
+  const { data } = await API.get(`/profile/me`);
   return data;
 };
 
-export const updateMyProfile = async (payload) => {
-  const { data } = await API.put(`/user/updateProfile`, payload);
+export const fetchProfileByUserId = async (userId) => {
+  const { data } = await API.get(`/profile/user/${userId}`);
+  return data;
+};
+
+export const updateMyProfile = async (formData) => {
+  const { data } = await API.post(`/profile/update`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return data;
 };
 
